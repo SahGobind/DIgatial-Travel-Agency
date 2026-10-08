@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Plane, 
@@ -15,6 +15,8 @@ import {
   CalendarCheck,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Sparkles,
   Clock,
   Compass,
@@ -31,6 +33,53 @@ import SectionTitle from '../components/common/SectionTitle';
 export const HomePage = () => {
   // FAQ Accordion active state
   const [openFaq, setOpenFaq] = useState(0);
+
+  // Animated Flight Images Slideshow (5-second duration)
+  const heroSlides = [
+    {
+      id: 1,
+      image: '/flights/flight-1.png',
+      alt: 'Commercial passenger airliner soaring above sea of clouds',
+      badge: 'Worldwide Flights',
+      title: 'Fly To Any Destination',
+      subtitle: 'Lowest airfare guarantee for Gulf, Southeast Asia, Europe & Americas.',
+    },
+    {
+      id: 2,
+      image: '/flights/flight-2.png',
+      alt: 'Modern airliner cruising smoothly against deep blue sky',
+      badge: 'Partner Airlines',
+      title: 'Trusted Global Carriers',
+      subtitle: 'Direct bookings with Qatar Airways, FlyDubai, Nepal Airlines & Air Arabia.',
+    },
+    {
+      id: 3,
+      image: '/flights/flight-3.png',
+      alt: 'Aircraft wing overlooking clouds in golden sunrise glow',
+      badge: 'Luxury & Comfort',
+      title: 'Unforgettable Journeys',
+      subtitle: 'Complete visa documentation, prompt ticketing and 24/7 travel desk support.',
+    },
+  ];
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000); // 5 seconds duration
+    return () => clearInterval(interval);
+  }, [isPaused, heroSlides.length]);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  };
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -284,29 +333,96 @@ export const HomePage = () => {
               </div>
             </div>
 
-            {/* Right Visual Image Card with Floating Badges */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-gradient-to-tr from-slate-900 to-blue-950">
-                <img
-                  src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80"
-                  alt="Airplane in flight representing world travel"
-                  className="w-full h-80 sm:h-96 object-cover object-center opacity-90 hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B2A6F]/90 via-transparent to-black/20"></div>
+            {/* Right Visual Image Card with 5-Second Animated Flight Showcase */}
+            <div 
+              className="lg:col-span-5 relative group"
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+            >
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 bg-gradient-to-tr from-slate-900 to-blue-950 h-84 sm:h-96">
+                {/* 5-Second Countdown Progress Bar */}
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/20 z-30 overflow-hidden">
+                  <div
+                    key={currentSlide + (isPaused ? '-paused' : '')}
+                    className={`h-full bg-gradient-to-r from-amber-400 via-[#D71920] to-amber-300 ${
+                      isPaused ? 'w-full opacity-60' : 'animate-slide-progress'
+                    }`}
+                  />
+                </div>
 
-                <div className="absolute bottom-6 left-6 right-6 text-white space-y-1">
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                    Worldwide Flights &amp; Visas
+                {/* Slides */}
+                {heroSlides.map((slide, index) => {
+                  const isActive = index === currentSlide;
+                  return (
+                    <div
+                      key={slide.id}
+                      className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                        isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                      }`}
+                    >
+                      <img
+                        src={slide.image}
+                        alt={slide.alt}
+                        className={`w-full h-full object-cover object-center transform transition-transform duration-[5000ms] ease-out ${
+                          isActive ? 'scale-110' : 'scale-100'
+                        }`}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#071941]/95 via-[#071941]/40 to-black/20"></div>
+
+                      <div className="absolute bottom-6 left-6 right-6 text-white space-y-1.5 z-20">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300 bg-amber-400/20 px-2.5 py-0.5 rounded-full border border-amber-300/30 backdrop-blur-sm">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                          {slide.badge}
+                        </span>
+                        <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight drop-shadow-md">
+                          {slide.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-blue-100/90 drop-shadow line-clamp-2">
+                          {slide.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Navigation Arrows (Hover Visible) */}
+                <button
+                  onClick={prevSlide}
+                  aria-label="Previous flight image"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-black/40 hover:bg-[#D71920] text-white flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 border border-white/20 shadow-lg cursor-pointer"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={nextSlide}
+                  aria-label="Next flight image"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-9 h-9 rounded-full bg-black/40 hover:bg-[#D71920] text-white flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-200 border border-white/20 shadow-lg cursor-pointer"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+
+                {/* Slide Indicators / Thumbnails Bar */}
+                <div className="absolute top-4 right-4 z-30 flex items-center gap-2 bg-[#071941]/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-md">
+                  {heroSlides.map((slide, idx) => (
+                    <button
+                      key={slide.id}
+                      onClick={() => setCurrentSlide(idx)}
+                      aria-label={`View slide ${idx + 1}`}
+                      className={`transition-all duration-300 rounded-full cursor-pointer flex items-center justify-center ${
+                        idx === currentSlide
+                          ? 'w-6 h-2 bg-[#D71920]'
+                          : 'w-2 h-2 bg-white/60 hover:bg-white'
+                      }`}
+                    />
+                  ))}
+                  <span className="text-[10px] font-mono text-blue-200 pl-1">
+                    {currentSlide + 1}/3
                   </span>
-                  <h3 className="text-xl font-bold">Fly to Your Dream Destination</h3>
-                  <p className="text-xs text-blue-100">
-                    Trusted assistance for UAE, Qatar, Saudi Arabia, Malaysia &amp; Beyond.
-                  </p>
                 </div>
               </div>
 
               {/* Floating Mini Badge 1 */}
-              <div className="absolute -top-4 -left-4 bg-white text-[#0B2A6F] p-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-100">
+              <div className="absolute -top-4 -left-4 bg-white text-[#0B2A6F] p-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-100 z-30">
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
                   ✓
                 </div>
@@ -317,8 +433,8 @@ export const HomePage = () => {
               </div>
 
               {/* Floating Mini Badge 2 */}
-              <div className="absolute -bottom-4 -right-4 bg-white text-[#0B2A6F] p-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-100">
-                <div className="w-8 h-8 rounded-lg bg-red-100 text-[#D71920] flex items-center justify-center font-bold">
+              <div className="absolute -bottom-4 -right-4 bg-white text-[#0B2A6F] p-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-slate-100 z-30">
+                <div className="w-8 h-8 rounded-lg bg-red-100 text-[#D71920] flex items-center justify-center font-bold animate-pulse">
                   ★
                 </div>
                 <div className="text-left">
@@ -554,6 +670,64 @@ export const HomePage = () => {
             <Button to="/destinations" variant="outline" size="md" icon={ArrowRight} iconPosition="right">
               View All Destinations
             </Button>
+          </div>
+        </Container>
+      </section>
+
+      {/* 4.5 FLIGHT FLEET & AIRLINE NETWORK SHOWCASE */}
+      <section className="py-16 bg-gradient-to-b from-white to-[#F5F8FC] border-t border-slate-200">
+        <Container>
+          <SectionTitle
+            badge="Aviation Network"
+            title="Modern Fleet & Global Flight Connections"
+            subtitle="Fly with world-class airlines to over 150+ worldwide destinations"
+            description="Our direct booking channel connects Janakpur Dham to all major domestic and international hubs."
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+            {heroSlides.map((flight, idx) => (
+              <div
+                key={flight.id}
+                onClick={() => setCurrentSlide(idx)}
+                className={`cursor-pointer rounded-2xl overflow-hidden border transition-all duration-300 group ${
+                  idx === currentSlide
+                    ? 'border-[#D71920] ring-2 ring-[#D71920]/30 shadow-xl scale-[1.02] bg-white'
+                    : 'border-slate-200 bg-white hover:shadow-lg hover:border-blue-300'
+                }`}
+              >
+                <div className="relative h-48 overflow-hidden bg-slate-900">
+                  <img
+                    src={flight.image}
+                    alt={flight.alt}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <span className="absolute top-3 left-3 bg-[#0B2A6F]/90 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <Plane className="w-3 h-3 text-amber-400" />
+                    {flight.badge}
+                  </span>
+                  {idx === currentSlide && (
+                    <span className="absolute top-3 right-3 bg-[#D71920] text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                      Active (5s Auto)
+                    </span>
+                  )}
+                </div>
+                <div className="p-5">
+                  <h4 className="text-base font-bold text-[#172033] mb-1.5 group-hover:text-[#0B2A6F] transition-colors">
+                    {flight.title}
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                    {flight.subtitle}
+                  </p>
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#0B2A6F]">
+                    <span>Instant Booking Support</span>
+                    <span className="text-[#D71920] group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                      Book Now <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </Container>
       </section>

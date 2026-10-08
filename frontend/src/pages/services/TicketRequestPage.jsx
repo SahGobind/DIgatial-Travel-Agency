@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { 
   Plane, 
@@ -58,7 +58,7 @@ export const TicketRequestPage = () => {
   const [searchError, setSearchError] = useState('');
   const [selectedStopsFilter, setSelectedStopsFilter] = useState('ALL'); // 'ALL' | 'DIRECT' | '1_STOP'
   const [selectedAirlineFilter, setSelectedAirlineFilter] = useState('ALL');
-  const [selectedSort, setSelectedSort] = useState('CHEAPEST'); // 'CHEAPEST' | 'FASTEST' | 'EARLIEST'
+  const [selectedSort, setSelectedSort] = useState('CHEAPEST'); // 'CHEAPEST' | 'FASTEST' | 'EARLIEST' | 'LATEST' | 'EXPENSIVE'
   const [expandedOfferId, setExpandedOfferId] = useState(null);
 
   // STEP 25-29: Multi-Step Booking Wizard States
@@ -145,11 +145,29 @@ export const TicketRequestPage = () => {
     },
   });
 
-  // Dual Mode Combobox (Type & Click Dropdown) States
+  // Dual Mode Combobox (Type & Click Dropdown) States & Outside Click Refs
   const [isFromOpen, setIsFromOpen] = useState(false);
   const [isToOpen, setIsToOpen] = useState(false);
   const [fromFilterText, setFromFilterText] = useState('Kathmandu (KTM)');
   const [toFilterText, setToFilterText] = useState('Dubai (DXB)');
+
+  const fromComboboxRef = useRef(null);
+  const toComboboxRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (fromComboboxRef.current && !fromComboboxRef.current.contains(event.target)) {
+        setIsFromOpen(false);
+      }
+      if (toComboboxRef.current && !toComboboxRef.current.contains(event.target)) {
+        setIsToOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const AIRPORTS_CATALOG = [
     // Nepal Domestic Hubs
@@ -206,23 +224,29 @@ export const TicketRequestPage = () => {
   };
 
   // Perform Live Flight Search (React ➔ Django ➔ Flight API)
-  const handleLiveFlightSearch = async (e) => {
-    if (e) e.preventDefault();
+  const handleLiveFlightSearch = async (e, overrideClass = null, overrideTripType = null) => {
+    if (e && e.preventDefault) e.preventDefault();
     setIsSearching(true);
     setSearchError('');
     setUnavailableAlert('');
     setExpandedOfferId(null);
 
+    const targetClass = overrideClass || cabinClass;
+    const targetTripType = overrideTripType || tripType;
+
     const values = getValues();
+    const originVal = fromFilterText || values.from || 'Kathmandu (KTM)';
+    const destinationVal = toFilterText || values.to || 'Dubai (DXB)';
+
     const payload = {
-      origin: values.from || 'Kathmandu (KTM)',
-      destination: values.to || 'Dubai (DXB)',
+      origin: originVal,
+      destination: destinationVal,
       departure_date: values.departureDate || new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0],
-      return_date: tripType === 'roundTrip' ? (values.returnDate || null) : null,
+      return_date: targetTripType === 'roundTrip' ? (values.returnDate || null) : null,
       adults: parseInt(values.adults, 10) || 1,
       children: parseInt(values.children, 10) || 0,
-      cabin_class: cabinClass,
-      trip_type: tripType === 'roundTrip' ? 'ROUND_TRIP' : 'ONE_WAY',
+      cabin_class: targetClass,
+      trip_type: targetTripType === 'roundTrip' ? 'ROUND_TRIP' : 'ONE_WAY',
     };
 
     try {
@@ -238,8 +262,10 @@ export const TicketRequestPage = () => {
 
   // Swap Origin and Destination
   const handleSwapAirports = () => {
-    const currentFrom = getValues('from');
-    const currentTo = getValues('to');
+    const currentFrom = fromFilterText || getValues('from');
+    const currentTo = toFilterText || getValues('to');
+    setFromFilterText(currentTo);
+    setToFilterText(currentFrom);
     setValue('from', currentTo);
     setValue('to', currentFrom);
   };
@@ -501,21 +527,43 @@ export const TicketRequestPage = () => {
     new Set((searchResults?.offers || []).map(o => JSON.stringify({ code: o.airline.code, name: o.airline.name })))
   ).map(s => JSON.parse(s));
 
+  // Helper to parse duration string like "4h 30m" into total minutes
+  const parseDurationMinutes = (durStr) => {
+    if (!durStr) return 0;
+    const hoursMatch = String(durStr).match(/(\d+)\s*h/i);
+    const minsMatch = String(durStr).match(/(\d+)\s*m/i);
+    const hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+    const mins = minsMatch ? parseInt(minsMatch[1], 10) : 0;
+    return hours * 60 + mins;
+  };
+
+  // Helper to get numeric total price
+  const getOfferPrice = (offer) => {
+    return Number(offer?.pricing?.total_amount ?? offer?.pricing?.price_per_adult ?? offer?.price ?? 0);
+  };
+
   // STEP 26: Filtering & Sorting Engine
-  let processedOffers = (searchResults?.offers || []).filter(offer => {
+  let processedOffers = [...(searchResults?.offers || [])].filter(offer => {
     if (selectedStopsFilter === 'DIRECT' && offer.stops !== 0) return false;
     if (selectedStopsFilter === '1_STOP' && offer.stops !== 1) return false;
     if (selectedAirlineFilter !== 'ALL' && offer.airline.code !== selectedAirlineFilter) return false;
     return true;
   });
 
-  if (selectedSort === 'CHEAPEST') {
-    processedOffers.sort((a, b) => a.pricing.total_amount - b.pricing.total_amount);
-  } else if (selectedSort === 'FASTEST') {
-    processedOffers.sort((a, b) => parseInt(a.duration) - parseInt(b.duration));
-  } else if (selectedSort === 'EARLIEST') {
-    processedOffers.sort((a, b) => a.departure_time.localeCompare(b.departure_time));
-  }
+  processedOffers.sort((a, b) => {
+    if (selectedSort === 'CHEAPEST') {
+      return getOfferPrice(a) - getOfferPrice(b);
+    } else if (selectedSort === 'EXPENSIVE') {
+      return getOfferPrice(b) - getOfferPrice(a);
+    } else if (selectedSort === 'FASTEST') {
+      return parseDurationMinutes(a.duration) - parseDurationMinutes(b.duration);
+    } else if (selectedSort === 'EARLIEST') {
+      return (a.departure_time || '').localeCompare(b.departure_time || '');
+    } else if (selectedSort === 'LATEST') {
+      return (b.departure_time || '').localeCompare(a.departure_time || '');
+    }
+    return 0;
+  });
 
   return (
     <div className="w-full pb-20">
@@ -587,15 +635,16 @@ export const TicketRequestPage = () => {
         {activeTab === 'liveSearch' && (
           <div className="space-y-8">
             {/* Search Query Bar */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/50 rounded-full blur-3xl pointer-events-none"></div>
-
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm relative z-30">
               <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100 mb-6 relative z-10">
                 <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
                   <button
                     type="button"
-                    onClick={() => setTripType('oneWay')}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    onClick={() => {
+                      setTripType('oneWay');
+                      handleLiveFlightSearch(null, null, 'oneWay');
+                    }}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       tripType === 'oneWay' ? 'bg-[#0B2A6F] text-white shadow-sm' : 'text-slate-600 hover:text-[#0B2A6F]'
                     }`}
                   >
@@ -603,8 +652,11 @@ export const TicketRequestPage = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTripType('roundTrip')}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    onClick={() => {
+                      setTripType('roundTrip');
+                      handleLiveFlightSearch(null, null, 'roundTrip');
+                    }}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       tripType === 'roundTrip' ? 'bg-[#0B2A6F] text-white shadow-sm' : 'text-slate-600 hover:text-[#0B2A6F]'
                     }`}
                   >
@@ -613,17 +665,28 @@ export const TicketRequestPage = () => {
                 </div>
 
                 {/* Cabin Class Selection */}
-                <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs font-bold">
-                  {['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'].map((cls) => (
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+                  {[
+                    { key: 'ECONOMY', label: 'ECONOMY' },
+                    { key: 'PREMIUM_ECONOMY', label: 'PREMIUM ECONOMY' },
+                    { key: 'BUSINESS', label: 'BUSINESS' },
+                    { key: 'FIRST', label: 'FIRST' },
+                  ].map((cls) => (
                     <button
-                      key={cls}
+                      key={cls.key}
                       type="button"
-                      onClick={() => setCabinClass(cls)}
-                      className={`px-3 py-1.5 rounded-lg transition-colors ${
-                        cabinClass === cls ? 'bg-white text-[#0B2A6F] shadow-sm font-extrabold' : 'text-slate-500 hover:text-slate-800'
+                      onClick={() => {
+                        setCabinClass(cls.key);
+                        setValue('travelClass', cls.key);
+                        handleLiveFlightSearch(null, cls.key);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        cabinClass === cls.key
+                          ? 'bg-[#0B2A6F] text-white shadow-sm font-extrabold'
+                          : 'text-slate-600 hover:text-[#0B2A6F] hover:bg-slate-200'
                       }`}
                     >
-                      {cls.replace('_', ' ')}
+                      {cls.label}
                     </button>
                   ))}
                 </div>
@@ -632,14 +695,17 @@ export const TicketRequestPage = () => {
               {/* Search Form Inputs */}
               <form onSubmit={handleLiveFlightSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end relative z-10">
                 {/* From (Origin) Dual-Mode Combobox */}
-                <div className="lg:col-span-3 relative">
+                <div ref={fromComboboxRef} className="lg:col-span-3 relative">
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                       From (Origin)
                     </label>
                     <button
                       type="button"
-                      onClick={() => setIsFromOpen(!isFromOpen)}
+                      onClick={() => {
+                        setIsFromOpen(!isFromOpen);
+                        setIsToOpen(false);
+                      }}
                       className="text-[11px] font-bold text-[#0B2A6F] hover:underline cursor-pointer flex items-center gap-0.5"
                     >
                       Browse {isFromOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -655,13 +721,19 @@ export const TicketRequestPage = () => {
                         setFromFilterText(e.target.value);
                         setValue('from', e.target.value);
                       }}
-                      onFocus={() => setIsFromOpen(true)}
+                      onFocus={() => {
+                        setIsFromOpen(true);
+                        setIsToOpen(false);
+                      }}
                       placeholder="Type city, code or airport..."
                       className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-300 text-sm bg-white font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2A6F]"
                     />
                     <button
                       type="button"
-                      onClick={() => setIsFromOpen(!isFromOpen)}
+                      onClick={() => {
+                        setIsFromOpen(!isFromOpen);
+                        setIsToOpen(false);
+                      }}
                       className="absolute right-2.5 top-3 text-slate-400 hover:text-[#0B2A6F] cursor-pointer"
                     >
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFromOpen ? 'rotate-180' : ''}`} />
@@ -670,10 +742,10 @@ export const TicketRequestPage = () => {
 
                   {/* Dual Mode Dropdown Menu for Origin */}
                   {isFromOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-2 max-h-72 overflow-y-auto space-y-1 animate-in fade-in">
+                    <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-2 max-h-72 overflow-y-auto space-y-1 animate-in fade-in">
                       <div className="p-2 border-b border-slate-100 flex items-center justify-between">
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Select Origin Airport</span>
-                        <button type="button" onClick={() => setIsFromOpen(false)} className="text-[11px] font-bold text-slate-500 hover:text-slate-800">Close</button>
+                        <button type="button" onClick={() => setIsFromOpen(false)} className="text-[11px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer">Close</button>
                       </div>
 
                       {AIRPORTS_CATALOG.filter(a => 
@@ -740,14 +812,7 @@ export const TicketRequestPage = () => {
                 <div className="hidden lg:flex lg:col-span-1 justify-center pb-4">
                   <button
                     type="button"
-                    onClick={() => {
-                      const tempFrom = fromFilterText;
-                      const tempTo = toFilterText;
-                      setFromFilterText(tempTo);
-                      setToFilterText(tempFrom);
-                      setValue('from', tempTo);
-                      setValue('to', tempFrom);
-                    }}
+                    onClick={handleSwapAirports}
                     title="Swap Route"
                     className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer shadow-sm hover:scale-105"
                   >
@@ -756,14 +821,17 @@ export const TicketRequestPage = () => {
                 </div>
 
                 {/* To (Destination) Dual-Mode Combobox */}
-                <div className="lg:col-span-3 relative">
+                <div ref={toComboboxRef} className="lg:col-span-3 relative">
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                       To (Destination)
                     </label>
                     <button
                       type="button"
-                      onClick={() => setIsToOpen(!isToOpen)}
+                      onClick={() => {
+                        setIsToOpen(!isToOpen);
+                        setIsFromOpen(false);
+                      }}
                       className="text-[11px] font-bold text-[#D71920] hover:underline cursor-pointer flex items-center gap-0.5"
                     >
                       Browse {isToOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -779,13 +847,19 @@ export const TicketRequestPage = () => {
                         setToFilterText(e.target.value);
                         setValue('to', e.target.value);
                       }}
-                      onFocus={() => setIsToOpen(true)}
+                      onFocus={() => {
+                        setIsToOpen(true);
+                        setIsFromOpen(false);
+                      }}
                       placeholder="Type city, code or airport..."
                       className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-slate-300 text-sm bg-white font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2A6F]"
                     />
                     <button
                       type="button"
-                      onClick={() => setIsToOpen(!isToOpen)}
+                      onClick={() => {
+                        setIsToOpen(!isToOpen);
+                        setIsFromOpen(false);
+                      }}
                       className="absolute right-2.5 top-3 text-slate-400 hover:text-[#0B2A6F] cursor-pointer"
                     >
                       <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isToOpen ? 'rotate-180' : ''}`} />
@@ -794,10 +868,10 @@ export const TicketRequestPage = () => {
 
                   {/* Dual Mode Dropdown Menu for Destination */}
                   {isToOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-2 max-h-72 overflow-y-auto space-y-1 animate-in fade-in">
+                    <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 p-2 max-h-72 overflow-y-auto space-y-1 animate-in fade-in">
                       <div className="p-2 border-b border-slate-100 flex items-center justify-between">
                         <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Select Destination</span>
-                        <button type="button" onClick={() => setIsToOpen(false)} className="text-[11px] font-bold text-slate-500 hover:text-slate-800">Close</button>
+                        <button type="button" onClick={() => setIsToOpen(false)} className="text-[11px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer">Close</button>
                       </div>
 
                       {AIRPORTS_CATALOG.filter(a => 
@@ -900,7 +974,7 @@ export const TicketRequestPage = () => {
                     type="submit"
                     variant="primary"
                     size="md"
-                    className="w-full justify-center py-2.5 h-[44px] bg-[#0B2A6F] hover:bg-[#071b48] text-white shadow-md font-bold"
+                    className="w-full justify-center py-2.5 h-[44px] bg-[#0B2A6F] hover:bg-[#071b48] text-white shadow-md font-bold cursor-pointer"
                     disabled={isSearching}
                   >
                     {isSearching ? (
@@ -938,6 +1012,9 @@ export const TicketRequestPage = () => {
                     <span className="text-xs text-slate-500">
                       • {searchResults.search_query.origin} ➔ {searchResults.search_query.destination}
                     </span>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#0B2A6F] border border-blue-200">
+                      {cabinClass.replace('_', ' ')}
+                    </span>
                   </div>
 
                   {/* Filter & Sort Controls */}
@@ -947,7 +1024,7 @@ export const TicketRequestPage = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedStopsFilter('ALL')}
-                        className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                        className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                           selectedStopsFilter === 'ALL' ? 'bg-[#0B2A6F] text-white shadow-sm' : 'text-slate-600'
                         }`}
                       >
@@ -956,7 +1033,7 @@ export const TicketRequestPage = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedStopsFilter('DIRECT')}
-                        className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                        className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                           selectedStopsFilter === 'DIRECT' ? 'bg-[#0B2A6F] text-white shadow-sm' : 'text-slate-600'
                         }`}
                       >
@@ -965,7 +1042,7 @@ export const TicketRequestPage = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedStopsFilter('1_STOP')}
-                        className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                        className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                           selectedStopsFilter === '1_STOP' ? 'bg-[#0B2A6F] text-white shadow-sm' : 'text-slate-600'
                         }`}
                       >
@@ -980,11 +1057,13 @@ export const TicketRequestPage = () => {
                       <select
                         value={selectedSort}
                         onChange={(e) => setSelectedSort(e.target.value)}
-                        className="bg-transparent font-bold text-[#0B2A6F] focus:outline-none cursor-pointer"
+                        className="bg-transparent font-bold text-[#0B2A6F] focus:outline-none cursor-pointer pr-1"
                       >
                         <option value="CHEAPEST">Cheapest Fare</option>
                         <option value="FASTEST">Shortest Duration</option>
                         <option value="EARLIEST">Earliest Departure</option>
+                        <option value="LATEST">Latest Departure</option>
+                        <option value="EXPENSIVE">Highest Fare</option>
                       </select>
                     </div>
                   </div>

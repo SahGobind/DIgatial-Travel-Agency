@@ -242,7 +242,9 @@ AMADEUS_CLIENT_SECRET = os.getenv('AMADEUS_CLIENT_SECRET', '')
 AMADEUS_ENVIRONMENT = os.getenv('AMADEUS_ENVIRONMENT', 'test')  # 'test' or 'production'
 
 # Duffel API
-DUFFEL_API_TOKEN = os.getenv('DUFFEL_API_TOKEN', '')
+DUFFEL_ACCESS_TOKEN = os.getenv('DUFFEL_ACCESS_TOKEN', os.getenv('DUFFEL_API_TOKEN', ''))
+DUFFEL_API_TOKEN = DUFFEL_ACCESS_TOKEN
+DUFFEL_API_BASE_URL = os.getenv('DUFFEL_API_BASE_URL', 'https://api.duffel.com')
 
 # Pricing & Markup Engine
 FLIGHT_BASE_CURRENCY = os.getenv('FLIGHT_BASE_CURRENCY', 'NPR')

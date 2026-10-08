@@ -81,3 +81,17 @@
   background: #94A3B8;
 }
 
+@keyframes slideProgress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-slide-progress {
+  animation: slideProgress 5s linear infinite;
+}
+
+
