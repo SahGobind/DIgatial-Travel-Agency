@@ -45,6 +45,7 @@ LOCAL_APPS = [
     'apps.tickets.apps.TicketsConfig',
     'apps.visas.apps.VisasConfig',
     'apps.hotels.apps.HotelsConfig',
+    'apps.transports.apps.TransportsConfig',
     'apps.payments.apps.PaymentsConfig',
     'apps.invoices.apps.InvoicesConfig',
     'apps.notifications.apps.NotificationsConfig',

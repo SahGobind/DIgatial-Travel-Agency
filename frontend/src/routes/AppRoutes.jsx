@@ -18,6 +18,7 @@ import ProtectedRoute from '../components/common/ProtectedRoute';
 import TicketRequestPage from '../pages/services/TicketRequestPage';
 import VisaApplicationPage from '../pages/services/VisaApplicationPage';
 import HotelBookingPage from '../pages/services/HotelBookingPage';
+import RoadTransportBookingPage from '../pages/services/RoadTransportBookingPage';
 
 // Invoice & Payment Pages
 import InvoiceListPage from '../pages/invoices/InvoiceListPage';
@@ -53,6 +54,8 @@ export const AppRoutes = () => {
         <Route path="/services/tickets" element={<TicketRequestPage />} />
         <Route path="/services/visa" element={<VisaApplicationPage />} />
         <Route path="/services/hotels" element={<HotelBookingPage />} />
+        <Route path="/services/transports" element={<RoadTransportBookingPage />} />
+        <Route path="/transports" element={<RoadTransportBookingPage />} />
         <Route path="/invoices" element={<InvoiceListPage />} />
         <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
         <Route path="/payments" element={<PaymentPage />} />

@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   User, 
   Plane, 
+  Bus,
   FileCheck, 
   Building2, 
   Briefcase, 
@@ -44,6 +45,7 @@ import {
   ticketService, 
   visaService, 
   hotelService, 
+  transportService,
   invoiceService, 
   notificationService 
 } from '../services';
@@ -64,6 +66,7 @@ export const CustomerDashboardPage = () => {
   const [tickets, setTickets] = useState([]);
   const [visas, setVisas] = useState([]);
   const [hotelBookings, setHotelBookings] = useState([]);
+  const [transportBookings, setTransportBookings] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [notifications, setNotifications] = useState([]);
 
@@ -85,12 +88,14 @@ export const CustomerDashboardPage = () => {
         ticketsRes,
         visasRes,
         hotelsRes,
+        transportsRes,
         invoicesRes,
         notifsRes,
       ] = await Promise.allSettled([
         ticketService.getTickets(),
         visaService.getVisas(),
         hotelService.getBookings(),
+        transportService.getMyBookings(),
         invoiceService.getInvoices(),
         notificationService.getNotifications(),
       ]);
@@ -106,6 +111,10 @@ export const CustomerDashboardPage = () => {
       if (hotelsRes.status === 'fulfilled') {
         const val = hotelsRes.value;
         setHotelBookings(Array.isArray(val) ? val : (val?.results || []));
+      }
+      if (transportsRes.status === 'fulfilled') {
+        const val = transportsRes.value;
+        setTransportBookings(Array.isArray(val) ? val : (val?.results || []));
       }
       if (invoicesRes.status === 'fulfilled') {
         const val = invoicesRes.value;
@@ -167,11 +176,21 @@ export const CustomerDashboardPage = () => {
       fee: h.total_amount ? `NPR ${h.total_amount}` : 'N/A',
       raw: h,
     })),
+    ...(Array.isArray(transportBookings) ? transportBookings : []).map((t) => ({
+      id: t.booking_reference || `ROAD-${t.id}`,
+      service: 'Road Transport',
+      title: `${t.schedule?.route?.from_city || ''} ➔ ${t.schedule?.route?.to_city || ''} (${t.schedule?.vehicle?.name || 'Transport'})`,
+      date: t.travel_date || t.created_at?.slice(0, 10) || '',
+      status: t.status || 'CONFIRMED',
+      fee: t.total_amount_npr ? `NPR ${t.total_amount_npr}` : 'N/A',
+      raw: t,
+    })),
   ].sort((a, b) => ((b.date || '') > (a.date || '') ? 1 : -1));
 
   const sidebarLinks = [
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
     { id: 'tickets', label: 'Flight Tickets', icon: Plane, count: tickets.length },
+    { id: 'transports', label: 'Road Transport', icon: Bus, count: transportBookings.length },
     { id: 'visa', label: 'Visa Applications', icon: FileCheck, count: visas.length },
     { id: 'hotels', label: 'Hotel Bookings', icon: Building2, count: hotelBookings.length },
     { id: 'invoices', label: 'Billing & Invoices', icon: Receipt, count: invoices.length },
@@ -769,6 +788,65 @@ export const CustomerDashboardPage = () => {
                             <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-xs">
                               <span className="text-slate-500">Total Billed:</span>
                               <span className="font-extrabold text-[#0B2A6F]">NPR {h.total_amount}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4.5: ROAD TRANSPORT BOOKINGS */}
+              {activeTab === 'transports' && (
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="text-xl font-extrabold text-[#0B2A6F]">Nepal Road Transport Bookings</h3>
+                      <p className="text-xs text-slate-500">Tourist buses, HiAce microbuses, 4WD mountain jeeps &amp; EV cabs.</p>
+                    </div>
+                    <Link to="/services/transports" className="px-4 py-2 rounded-xl bg-[#0B2A6F] text-white text-xs font-bold">
+                      + Book Road Transport
+                    </Link>
+                  </div>
+
+                  {transportBookings.length === 0 ? (
+                    <div className="py-12 text-center space-y-3">
+                      <Bus className="w-10 h-10 text-slate-300 mx-auto" />
+                      <p className="text-xs text-slate-500">No roadway transport reservations found.</p>
+                      <Link to="/services/transports" className="inline-block px-4 py-2 rounded-xl bg-[#0B2A6F] text-white text-xs font-bold">
+                        Browse Schedules &amp; Book
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {transportBookings.map((t) => (
+                        <div key={t.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <span className="text-[10px] font-mono font-bold text-slate-400">{t.booking_reference}</span>
+                              <h4 className="text-base font-extrabold text-[#0B2A6F]">
+                                {t.schedule?.route?.from_city} ➔ {t.schedule?.route?.to_city}
+                              </h4>
+                              <p className="text-xs text-slate-500">{t.schedule?.vehicle?.name || 'Transport Fleet'}</p>
+                            </div>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${getStatusBadge(t.status)}`}>
+                              {t.status}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                            <div><strong>Travel Date:</strong> {t.travel_date}</div>
+                            <div><strong>Departure:</strong> {t.schedule?.departure_time?.slice(0, 5) || '07:00'}</div>
+                            <div><strong>Seats:</strong> {(t.selected_seats || []).join(', ')}</div>
+                            <div><strong>Payment:</strong> {t.payment_status}</div>
+                            <div className="col-span-2 truncate"><strong>Boarding:</strong> {t.boarding_point}</div>
+                          </div>
+
+                          {t.total_amount_npr && (
+                            <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-xs">
+                              <span className="text-slate-500">Total Fare:</span>
+                              <span className="font-extrabold text-[#0B2A6F]">NPR {parseFloat(t.total_amount_npr).toLocaleString()}</span>
                             </div>
                           )}
                         </div>

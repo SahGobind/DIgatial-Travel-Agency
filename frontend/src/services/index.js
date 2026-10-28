@@ -4,6 +4,7 @@ export { default as flightService } from './flightService';
 export { default as ticketService } from './ticketService';
 export { default as visaService } from './visaService';
 export { default as hotelService } from './hotelService';
+export { default as transportService } from './transportService';
 export { default as customerService } from './customerService';
 export { default as invoiceService } from './invoiceService';
 export { default as notificationService } from './notificationService';

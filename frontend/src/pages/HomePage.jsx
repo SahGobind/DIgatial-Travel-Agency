@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Plane, 
+  Bus,
   FileText, 
   Building2, 
   Briefcase, 
@@ -447,21 +448,21 @@ export const HomePage = () => {
         </Container>
       </section>
 
-      {/* 2. SERVICE QUICK ACTIONS (4 Cards under hero) */}
+      {/* 2. SERVICE QUICK ACTIONS (5 Cards under hero) */}
       <section className="relative z-20 -mt-10">
         <Container>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* Card 1: Air Ticketing */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200/80 hover:border-blue-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
+            <div className="bg-white rounded-2xl p-5 shadow-xl border border-slate-200/80 hover:border-blue-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#0B2A6F] flex items-center justify-center mb-4 group-hover:bg-[#0B2A6F] group-hover:text-white transition-colors duration-200">
-                  <Plane className="w-6 h-6" />
+                <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#0B2A6F] flex items-center justify-center mb-3 group-hover:bg-[#0B2A6F] group-hover:text-white transition-colors duration-200">
+                  <Plane className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-[#172033] mb-1">
+                <h3 className="text-base font-bold text-[#172033] mb-1">
                   Air Ticketing
                 </h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                  Domestic &amp; international flight tickets with lowest fare guarantee.
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                  Domestic &amp; international flight tickets with lowest fares.
                 </p>
               </div>
               <Button
@@ -470,23 +471,48 @@ export const HomePage = () => {
                 size="sm"
                 icon={ArrowRight}
                 iconPosition="right"
-                className="w-full justify-between mt-2"
+                className="w-full justify-between mt-2 text-xs"
               >
                 Book Flight
               </Button>
             </div>
 
-            {/* Card 2: Visa Assistance */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200/80 hover:border-blue-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
+            {/* Card 2: Nepal Road Transport */}
+            <div className="bg-white rounded-2xl p-5 shadow-xl border border-slate-200/80 hover:border-amber-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-blue-50 text-[#123D8D] flex items-center justify-center mb-4 group-hover:bg-[#123D8D] group-hover:text-white transition-colors duration-200">
-                  <FileText className="w-6 h-6" />
+                <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mb-3 group-hover:bg-amber-600 group-hover:text-white transition-colors duration-200">
+                  <Bus className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-[#172033] mb-1">
+                <h3 className="text-base font-bold text-[#172033] mb-1">
+                  Nepal Road Transport
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                  Tourist sofa buses, express HiAce, 4WD mountain jeeps &amp; EV cabs.
+                </p>
+              </div>
+              <Button
+                to="/services/transports"
+                variant="outline"
+                size="sm"
+                icon={ArrowRight}
+                iconPosition="right"
+                className="w-full justify-between mt-2 text-xs font-bold text-amber-700 hover:text-amber-800"
+              >
+                Book Transport
+              </Button>
+            </div>
+
+            {/* Card 3: Visa Assistance */}
+            <div className="bg-white rounded-2xl p-5 shadow-xl border border-slate-200/80 hover:border-blue-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#123D8D] flex items-center justify-center mb-3 group-hover:bg-[#123D8D] group-hover:text-white transition-colors duration-200">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-[#172033] mb-1">
                   Visa Assistance
                 </h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                  Complete visa processing support for tourist, visit, and business visas.
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                  Complete visa processing support for tourist, visit &amp; work visas.
                 </p>
               </div>
               <Button
@@ -495,23 +521,23 @@ export const HomePage = () => {
                 size="sm"
                 icon={ArrowRight}
                 iconPosition="right"
-                className="w-full justify-between mt-2"
+                className="w-full justify-between mt-2 text-xs"
               >
                 Apply Visa
               </Button>
             </div>
 
-            {/* Card 3: Hotel Booking */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200/80 hover:border-red-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
+            {/* Card 4: Hotel Booking */}
+            <div className="bg-white rounded-2xl p-5 shadow-xl border border-slate-200/80 hover:border-red-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-red-50 text-[#D71920] flex items-center justify-center mb-4 group-hover:bg-[#D71920] group-hover:text-white transition-colors duration-200">
-                  <Building2 className="w-6 h-6" />
+                <div className="w-11 h-11 rounded-xl bg-red-50 text-[#D71920] flex items-center justify-center mb-3 group-hover:bg-[#D71920] group-hover:text-white transition-colors duration-200">
+                  <Building2 className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-[#172033] mb-1">
+                <h3 className="text-base font-bold text-[#172033] mb-1">
                   Hotel Booking
                 </h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                  Comfortable hotels at the best prices with verified accommodations.
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                  Comfortable hotels at the best rates with verified stays.
                 </p>
               </div>
               <Button
@@ -520,23 +546,23 @@ export const HomePage = () => {
                 size="sm"
                 icon={ArrowRight}
                 iconPosition="right"
-                className="w-full justify-between mt-2"
+                className="w-full justify-between mt-2 text-xs"
               >
                 Find Hotels
               </Button>
             </div>
 
-            {/* Card 4: Holiday & Tour Packages */}
-            <div className="bg-white rounded-2xl p-6 shadow-xl border border-slate-200/80 hover:border-emerald-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
+            {/* Card 5: Holiday & Tour Packages */}
+            <div className="bg-white rounded-2xl p-5 shadow-xl border border-slate-200/80 hover:border-emerald-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group">
               <div>
-                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-200">
-                  <Compass className="w-6 h-6" />
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-200">
+                  <Compass className="w-5 h-5" />
                 </div>
-                <h3 className="text-lg font-bold text-[#172033] mb-1">
+                <h3 className="text-base font-bold text-[#172033] mb-1">
                   Holiday Packages
                 </h3>
-                <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                  Curated international &amp; domestic vacation packages at discounted group rates.
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                  Curated international &amp; domestic vacation packages.
                 </p>
               </div>
               <Button
@@ -545,7 +571,7 @@ export const HomePage = () => {
                 size="sm"
                 icon={ArrowRight}
                 iconPosition="right"
-                className="w-full justify-between mt-2"
+                className="w-full justify-between mt-2 text-xs"
               >
                 Explore Tours
               </Button>

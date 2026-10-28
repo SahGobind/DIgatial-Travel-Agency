@@ -50,6 +50,23 @@ export const mainServicesData = [
     route: '/services/hotels',
     badge: 'Best Rates',
   },
+  {
+    id: 'road-transport',
+    title: 'Nepal Roadway Transport',
+    icon: 'Bus',
+    image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80',
+    description: 'All types of roadway transportation across Nepal: VIP Tourist Sofa Buses, Express HiAce Microbuses, 4WD Mountain Jeeps, and Private EV Cabs.',
+    features: [
+      'VIP Sofa & Tourist Deluxe Buses',
+      'Express HiAce (BP & Prithvi Hwy)',
+      '4WD Mountain Jeeps (Mustang/Manang)',
+      'Intercity Private & EV Cabs',
+      'Live Seat Selection & Digital Voucher',
+    ],
+    buttonText: 'Book Road Transport',
+    route: '/services/transports',
+    badge: 'All Nepal Fleets',
+  },
 ];
 
 export const whyChooseServicesData = [

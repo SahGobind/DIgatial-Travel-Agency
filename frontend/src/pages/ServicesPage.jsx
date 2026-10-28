@@ -5,6 +5,7 @@ import {
   FileCheck, 
   Building2, 
   Briefcase, 
+  Bus,
   CheckCircle2, 
   ArrowRight, 
   ChevronDown, 
@@ -49,6 +50,8 @@ export const ServicesPage = () => {
       case 'Building2':
       case 'Hotel':
         return Building2;
+      case 'Bus':
+        return Bus;
       case 'Briefcase':
         return Briefcase;
       default:
@@ -89,10 +92,10 @@ export const ServicesPage = () => {
             badge="All-In-One Travel"
             title="Comprehensive Services"
             subtitle="Tailored to meet domestic and international travel needs"
-            description="Explore our core offerings spanning flight reservations, consular visa guidance, and global hotel bookings."
+            description="Explore our core offerings spanning flight reservations, consular visa guidance, global hotel bookings, and all Nepal roadway transportation."
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
             {mainServicesData.map((service) => {
               const IconComponent = getIcon(service.icon);
               return (

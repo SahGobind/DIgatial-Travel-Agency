@@ -24,8 +24,8 @@ export const Navbar = () => {
   const navLinks = [
     { name: t('navHome'), path: '/' },
     { name: t('navServices'), path: '/services' },
+    { name: t('navTransports'), path: '/transports' },
     { name: t('navDestinations'), path: '/destinations' },
-    { name: t('navInvoices'), path: '/invoices' },
     { name: t('navAbout'), path: '/about' },
     { name: t('navContact'), path: '/contact' },
   ];
@@ -40,42 +40,13 @@ export const Navbar = () => {
 
   return (
     <header className="w-full sticky top-0 z-50 bg-white shadow-sm transition-all duration-200">
-      {/* Top utility bar matching agency address and phone numbers */}
+      {/* Top utility bar matching agency address */}
       <div className="bg-[#0B2A6F] text-white text-xs py-2 border-b border-[#123D8D]">
-        <Container className="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <Container className="flex items-center justify-between gap-2">
           {/* Location */}
           <div className="flex items-center gap-1.5 text-blue-100 font-medium">
             <MapPin className="w-3.5 h-3.5 text-[#D71920] shrink-0" />
             <span>{language === 'ne' ? 'थापा चोक, जनकपुरधाम, नेपाल' : 'Thapa Chowk, Janakpur Dham, Nepal'}</span>
-          </div>
-
-          {/* Contact Numbers & Language Toggle */}
-          <div className="flex items-center gap-4 text-blue-100">
-            <div className="flex items-center gap-1.5">
-              <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <a href="tel:9702022094" className="hover:text-white transition-colors">
-                ९७०२०२२०९४
-              </a>
-              <span className="opacity-40">|</span>
-              <a href="tel:9812193621" className="hover:text-white transition-colors">
-                ९८१२१९३६२१
-              </a>
-            </div>
-            
-            {/* Quick Language Toggle in Header */}
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/15 hover:bg-white/25 text-white font-bold text-[11px] transition-colors border border-white/20"
-              title="Switch Language / भाषा बदल्नुहोस्"
-            >
-              <Languages className="w-3.5 h-3.5 text-amber-300" />
-              <span>{language === 'ne' ? 'English (EN)' : 'नेपाली (NE)'}</span>
-            </button>
-
-            <span className="hidden md:inline-block px-2 py-0.5 rounded bg-white/10 text-[11px] font-semibold text-emerald-300">
-              {t('open7Days')}
-            </span>
           </div>
         </Container>
       </div>
